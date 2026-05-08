@@ -1,30 +1,65 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
-import Botao from '../components/Botao';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TextInput, StyleSheet, Alert, Animated, TouchableOpacity } from 'react-native';
 import { buscarUsuario, salvarUsuario } from '../storage/devgramStorage';
 
 export default function LoginScreen({ navigation }) {
   const [nome, setNome] = useState('');
   const [turma, setTurma] = useState('');
   const [bio, setBio] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // animações
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    async function verificarUsuario() {
-      const usuario = await buscarUsuario();
+    // entrada escalonada
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
+    async function verificar() {
+      const usuario = await buscarUsuario();
       if (usuario) {
         navigation.replace('Home');
       }
     }
 
-    verificarUsuario();
+    verificar();
   }, []);
+
+  function animarBotaoPressIn() {
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  function animarBotaoPressOut() {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 4,
+      useNativeDriver: true,
+    }).start();
+  }
 
   async function entrar() {
     if (!nome.trim() || !turma.trim()) {
-      Alert.alert('Atenção', 'Preencha pelo menos nome e turma.');
+      Alert.alert('Atenção', 'Preencha nome e turma.');
       return;
     }
+
+    setLoading(true);
 
     const usuario = {
       nome,
@@ -33,69 +68,126 @@ export default function LoginScreen({ navigation }) {
     };
 
     await salvarUsuario(usuario);
-    navigation.replace('Home');
+
+    setTimeout(() => {
+      setLoading(false);
+      navigation.replace('Home');
+    }, 800);
   }
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+
+      {/* LOGO (fade simples) */}
       <Text style={styles.logo}>DevGram</Text>
       <Text style={styles.subtitulo}>A rede social da sala</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Seu nome"
-        value={nome}
-        onChangeText={setNome}
-      />
+      {/* FORM (slide + fade) */}
+      <Animated.View
+        style={[
+          styles.form,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
 
-      <TextInput
-        style={styles.input}
-        placeholder="Turma"
-        value={turma}
-        onChangeText={setTurma}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Seu nome"
+          value={nome}
+          onChangeText={setNome}
+        />
 
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Bio"
-        value={bio}
-        onChangeText={setBio}
-        multiline
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Turma"
+          value={turma}
+          onChangeText={setTurma}
+        />
 
-      <Botao titulo="Entrar no DevGram" onPress={entrar} />
-    </View>
+        <TextInput
+          style={[styles.input, styles.bio]}
+          placeholder="Bio"
+          value={bio}
+          onChangeText={setBio}
+          multiline
+        />
+
+        {/* BOTÃO ANIMADO */}
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.botao}
+            onPress={entrar}
+            onPressIn={animarBotaoPressIn}
+            onPressOut={animarBotaoPressOut}
+          >
+            <Text style={styles.textoBotao}>
+              {loading ? 'Entrando...' : 'Entrar'}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+
+      </Animated.View>
+
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 22,
-    justifyContent: 'center',
     backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    padding: 24,
   },
+
   logo: {
-    fontSize: 42,
+    fontSize: 40,
     fontWeight: 'bold',
     color: '#7C3AED',
     textAlign: 'center',
   },
+
   subtitulo: {
-    fontSize: 18,
-    color: '#4B5563',
+    fontSize: 16,
+    color: '#6B7280',
     textAlign: 'center',
     marginBottom: 30,
   },
-  input: {
+
+  form: {
     backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 18,
+    elevation: 3,
+  },
+
+  input: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
-    fontSize: 16,
   },
-  textArea: {
-    height: 90,
+
+  bio: {
+    height: 80,
     textAlignVertical: 'top',
+  },
+
+  botao: {
+    backgroundColor: '#7C3AED',
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+
+  textoBotao: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
