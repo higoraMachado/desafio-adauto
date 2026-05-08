@@ -6,6 +6,7 @@ import HomeScreen from '../screens/HomeScreen';
 import FeedScreen from '../screens/FeedScreen';
 import NovoPostScreen from '../screens/NovoPostScreen';
 import PerfilScreen from '../screens/PerfilScreen';
+import RegistroScreen from '../screens/RegistroScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +32,12 @@ export default function AppRoutes() {
       <Stack.Screen name="Feed" component={FeedScreen} options={{ title: 'Feed' }} />
       <Stack.Screen name="NovoPost" component={NovoPostScreen} options={{ title: 'Novo Post' }} />
       <Stack.Screen name="Perfil" component={PerfilScreen} options={{ title: 'Perfil' }} />
+      <Stack.Screen
+  name="Registro"
+  component={RegistroScreen}
+  options={{ title: 'Criar conta' }}
+/>
+      
     </Stack.Navigator>
   );
 }
